@@ -32,7 +32,7 @@
 # export HBASE_CLASSPATH=
 
 # The maximum amount of heap to use, in MB. Default is 1000.
-# export HBASE_HEAPSIZE=1000
+export HBASE_HEAPSIZE=2048
 
 # Extra Java runtime options.
 # Below are what we set by default.  May only work with SUN JVM.
@@ -114,4 +114,4 @@ export HBASE_OPTS="-XX:+UseConcMarkSweepGC"
 # export HBASE_SLAVE_SLEEP=0.1
 
 # Tell HBase whether it should manage it's own instance of Zookeeper or not.
-# export HBASE_MANAGES_ZK=true
+export HBASE_MANAGES_ZK=true
