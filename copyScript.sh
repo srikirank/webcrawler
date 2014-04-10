@@ -10,4 +10,8 @@ scp /root/spring14/webcrawler/conf/hbase/* root@slave1:/root/software/hbase-0.94
 scp /root/spring14/webcrawler/conf/hbase/* root@slave2:/root/software/hbase-0.94.7/conf
 scp /root/spring14/webcrawler/conf/hbase/* root@slave3:/root/software/hbase-0.94.7/conf
 
+scp /etc/hosts root@slave1:/etc
+scp /etc/hosts root@slave2:/etc
+scp /etc/hosts root@slave3:/etc
+
 chmod 755 /root/spring14/webcrawler/*.sh
