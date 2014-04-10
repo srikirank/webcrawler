@@ -1,0 +1,4 @@
+create 'frontier', 'URL'
+create 'repository' 'URL'
+put 'frontier' ,'1' ,'URL:address' , 'http://wikipedia.org'
+put 'frontier' ,'2' ,'URL:address' , 'http://google.com'
