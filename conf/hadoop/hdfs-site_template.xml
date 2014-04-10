@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+<!-- Properties that must be changed for using Multiple Hadoop in same machine/cluster -->
+<property>
+      <name>dfs.http.address</name>
+            <!-- HDFS web interface port, please check before using that port #
+                            e.g. 0.0.0.0:<unique_port#> -->
+      <value>0.0.0.0:__port1__</value>
+</property>
+<property>
+      <name>dfs.name.dir</name>
+                  <!-- Path to store HDFS name table directory within MasterNode/NameNode
+                                  , musr be unique. e.g. /tmp/<your_id>/name-->
+      <value>/tmp/__username__/name</value>
+</property>
+<property>
+      <name>dfs.data.dir</name>
+                  <!-- Path to store blocks within DataNodes/Slaves, must be unique.
+                                  e.g. /tmp/<your_id>/data -->
+      <value>/tmp/__username__/data</value>
+</property>
+
+<!-- Please don't change the following properties, or you will not able
+          to run multiple hadoop in same machine/cluster . -->
+
+<property>
+      <name>dfs.secondary.http.address</name>
+      <value>0.0.0.0:0</value>
+</property>
+<property>
+      <name>dfs.datanode.address</name>
+      <value>0.0.0.0:0</value>
+</property>
+<property>
+      <name>dfs.datanode.http.address</name>
+      <value>0.0.0.0:0</value>
+</property>
+<property>
+      <name>dfs.datanode.ipc.address</name>
+      <value>0.0.0.0:0</value>
+</property>
+
+<property>
+      <name>dfs.replication</name>
+      <value>1</value>
+</property>
+
+
+</configuration>
