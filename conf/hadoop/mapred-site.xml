@@ -9,18 +9,18 @@
       <name>mapred.job.tracker</name>
             <!-- IP/Hostname:Port for Hadoop JobTracker, please check before using that port #
                             e.g. localhost:<unique_port#> -->
-      <value>127.0.0.1:9004</value>
+      <value>master:9004</value>
       </property>
       <property>
             <name>mapred.job.tracker.http.address</name>
                   <!-- IP/Hostname:Port for Hadoop JobTracker, please check before using that port #
                                         e.g. 0.0.0.0:<unique_port#> -->
-      <value>0.0.0.0:9005</value>
+      <value>master:9005</value>
       </property>
      
       <property>
         <name>mapred.task.tracker.http.address</name>
-        <value>0.0.0.0:0</value>
+        <value>master:9006</value>
       </property>
 
       <property>
@@ -33,12 +33,11 @@
       <property>
       <name>mapred.tasktracker.map.tasks.maximum</name>
             <!-- maximum map tasks per node, please set it as same as the amount of cores (cpu)-->
-      <value>2</value>
+      <value>6</value>
       </property>
       <property>
             <name>mapred.tasktracker.reduce.tasks.maximum</name>
                         <!-- maximum map tasks per node, please set it as same as the amount of cores (cpu)-->
-      <value>2</value>
+      <value>3</value>
       </property>
-
 </configuration>
