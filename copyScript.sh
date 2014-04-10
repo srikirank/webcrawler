@@ -9,3 +9,5 @@ scp /root/software/hadoop-1.1.2/conf/* root@slave3:/root/software/hadoop-1.1.2/c
 scp /root/spring14/webcrawler/conf/hbase/* root@slave1:/root/software/hbase-0.94.7/conf
 scp /root/spring14/webcrawler/conf/hbase/* root@slave2:/root/software/hbase-0.94.7/conf
 scp /root/spring14/webcrawler/conf/hbase/* root@slave3:/root/software/hbase-0.94.7/conf
+
+chmod 755 /root/spring14/webcrawler/*.sh
