@@ -1,0 +1,40 @@
+<!-- Build File for VBS Web Service -->
+
+<project name="WebCrawling" basedir="." default="generateJar">
+
+    <property environment="env"/>
+
+    <property name="buildDir" value="build"/>
+	<property name="distDir" value="dist"/>
+
+    <path id="customizedClasspath">
+		<fileset dir="resources/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="compileService">
+        <mkdir dir="${buildDir}"/>
+        <mkdir dir="${buildDir}/classes"/>
+
+        <!--First let's compile the classes-->
+        <javac debug="on" 
+               fork="true"
+               destdir="${buildDir}/classes" 
+               srcdir="${basedir}/src"
+               classpathref="customizedClasspath">
+        </javac>
+    </target>
+
+    <target name="generateJar" depends="compileService">
+		<mkdir dir="${distDir}/lib/"/>
+        <jar destfile="${distDir}/lib/WebCrawling.jar">
+			<fileset dir="${buildDir}/classes"/>
+		</jar>
+    </target>
+
+	<target name="clean">
+		<delete dir="${buildDir}"/>
+		<delete dir="${distDir}"/>
+	</target>
+</project>
