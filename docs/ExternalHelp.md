@@ -7,7 +7,11 @@ Here are the various sources that helped us in this project.
 3. [Working with lists][markdown-3] - Macdrifter
 4. [Quick reference][markdown-4] - Darkcoding
 
+## Eclipse
+1. [Converting a folder into eclipse project][eclipse-1] - Stackoverflow
+
 [markdown-1]: http://daringfireball.net/projects/markdown/basics "Basics"
 [markdown-2]: http://daringfireball.net/projects/markdown/syntax "Syntax"
 [markdown-3]: http://www.macdrifter.com/2012/04/writing-in-markdown-lists.html "Lists"
 [markdown-4]: http://www.darkcoding.net/software/markdown-quick-reference/ "Quick reference"
+[eclipse-1]: http://stackoverflow.com/questions/9592081/convert-eclipse-project-type-from-general-to-java/9592395#9592395 "Eclipse projects"
