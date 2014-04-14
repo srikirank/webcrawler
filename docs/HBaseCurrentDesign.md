@@ -14,7 +14,7 @@ Currently we are using two tables to serve as datastore for the crawler function
     <th>urls:</th>
   </tr>
   <tr>
-    <td rowspan="3">`com.apple.www`</td>
+    <td rowspan="3">com.apple.www</td>
     <td>/iPhone</td>
   </tr>
   <tr>
