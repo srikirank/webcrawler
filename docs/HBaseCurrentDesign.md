@@ -31,7 +31,7 @@ Currently we are using two tables to serve as datastore for the crawler function
 
 + **Col-Family**: urls<br/>
     + **Col-Qualifier-1**: url<br/>
-    + **Col-Qualifier-2**: hash<br/>      
+    + **Col-Qualifier-2**: hash<br/>
     + **Col-Qualifier-3**: content<br/>
 
 An Example of the structure of repository:
