@@ -28,6 +28,7 @@ Currently we are using two tables to serve as datastore for the crawler function
 ## Repository
 + **Row-key**: reversed host-*hash* <br/>
 >`com.apple.www-ca0ae2e3a`
+
 + **Col-Family**: urls<br/>
     + **Col-Qualifier-1**: url<br/>
     + **Col-Qualifier-2**: hash<br/>      
