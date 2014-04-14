@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="code/src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
+		<attributes>
+			<attribute name="owner.project.facets" value="java"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="code/resources/lib/commons-cli-1.2.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/dom4j-1.5.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/hadoop-core-1.1.2.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/hadoop-tools-1.1.2.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/hbase-0.94.7.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/jsoup-1.7.3.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/lucene-core-3.6.2.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/nekohtml.jar"/>
+	<classpathentry kind="lib" path="code/resources/lib/xercesMinimal.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
