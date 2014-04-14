@@ -14,4 +14,4 @@ Here are the various sources that helped us in this project.
 [markdown-2]: http://daringfireball.net/projects/markdown/syntax "Syntax"
 [markdown-3]: http://www.macdrifter.com/2012/04/writing-in-markdown-lists.html "Lists"
 [markdown-4]: http://www.darkcoding.net/software/markdown-quick-reference/ "Quick reference"
-[eclipse-1]: http://stackoverflow.com/questions/9592081/convert-eclipse-project-type-from-general-to-java/9592395#9592395 "Eclipse projects"
+[eclipse-1]: http://stackoverflow.com/questions/179439/how-to-change-an-eclipse-default-project-into-a-java-project "Eclipse projects"
