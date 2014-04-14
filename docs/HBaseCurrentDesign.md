@@ -38,6 +38,12 @@ An Example of the structure of repository:
 
 <table>
 <tr>
+  <th>row</th>
+  <th>urls:url</th>
+  <th>urls:hash</th>
+  <th>urls:content</th>
+</tr>
+<tr>
   <td>com.apple.com-ca0ae2e3ae</td>
   <td>/iPhone</td>
   <td>ca0ae2e3aefc56f4c071f475575915bc05074ba4</td>
