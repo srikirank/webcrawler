@@ -3,6 +3,7 @@ package edu.wc;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -15,12 +16,14 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class WebCrawler {
+public class WebCrawler extends Configured implements Tool{
 
 	static final String FROINTER_TABLE_NAME = "frontier";
 	static final String REPOSITORY_TABLE_NAME = "repository";
@@ -90,7 +93,7 @@ public class WebCrawler {
 		job.setJarByClass(WebCrawler.class);
 		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
 				CrawlerMapper.class, Text.class, Writable.class, job, true);
-		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME,
+		TableMapReduceUtil.initTableReducerJob(REPOSITORY_TABLE_NAME,
 				CrawlerReducer.class, job);
 		job.setNumReduceTasks(1);
 		return job;
@@ -98,8 +101,26 @@ public class WebCrawler {
 
 	public static void main(String[] args) throws Exception {
 		Configuration conf = HBaseConfiguration.create();
-		Job job = configureJob(conf);
-		System.exit(job.waitForCompletion(true) ? 0 : 1);
+		int res = ToolRunner.run(conf, new WebCrawler(), args);
+//		Job job = configureJob(conf);
+		System.exit(res);
 	}
 
+	@Override
+	public int run(String[] arg0) throws Exception {
+		Configuration conf = super.getConf();
+		conf.set("mapred.map.tasks.speculative.execution", "false");
+		conf.set("mapred.reduce.tasks.speculative.execution", "false");
+		Scan scan = new Scan();
+		scan.addColumn(URL_COLUMN_FAMILY.getBytes(),
+				ADDRESS_COLUMN_NAME.getBytes());
+		Job job = new Job(conf, "Retrieving seeds from seed table ");
+		job.setJarByClass(WebCrawler.class);
+		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
+				CrawlerMapper.class, Text.class, Writable.class, job, true);
+		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME,
+				CrawlerReducer.class, job);
+		job.setNumReduceTasks(1);		
+		return job.waitForCompletion(true) ? 0 : 1;
+	}
 }
