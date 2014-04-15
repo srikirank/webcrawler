@@ -44,7 +44,7 @@ public class URLHelper {
 	/*
 	 * Generates SHA from the URL object
 	 */
-	protected String sha1() throws NoSuchAlgorithmException {
+	public String sha1() throws NoSuchAlgorithmException {
 		MessageDigest mDigest = MessageDigest.getInstance("SHA1");
 		byte[] result = mDigest.digest(url.toString().getBytes());
 		StringBuffer sb = new StringBuffer();
