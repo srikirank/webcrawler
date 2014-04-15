@@ -32,9 +32,12 @@ else
     exit 254
 fi
 
+export WC_CLASSPATH="/Users/sri/Development/Java/classpath"
+export LIBJARS="$WC_CLASSPATH"/jsoup-1.7.3.jar
 export HADOOP_CLASSPATH=`$HBASE_HOME/bin/hbase classpath`
+export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:`echo "$LIBJARS" | sed s/,/:/g`
 #echo "export HADOOP_CLASSPATH=`/root/software/hbase-0.94.7/bin/hbase classpath`" >> ~/.bashrc
 #source ~/.bashrc
 
 # run wordcount
-hadoop jar $HADOOP_INSTALL/lib/WebCrawling.jar edu.wc.WebCrawler
+hadoop jar $HADOOP_INSTALL/lib/WebCrawling.jar edu.wc.WebCrawler -libjars "$LIBJARS"
