@@ -66,12 +66,6 @@ public class URLHelper {
 		return url.getHost();
 	}
 
-	/*
-	 * public String generateKey() throws NoSuchAlgorithmException {
-	 * 
-	 * }
-	 */
-
 	public String getReversedHost() {
 		StringBuilder rHost = new StringBuilder();
 		String[] parts = getHost().split("\\.");
@@ -92,7 +86,7 @@ public class URLHelper {
 		return rHost;
 	}
 
-	public String getKey() throws NoSuchAlgorithmException {
+	public String generateKey() throws NoSuchAlgorithmException {
 		StringBuilder key = getRHost();
 		key.append("-").append(subSha1());
 		return key.toString();
@@ -107,6 +101,6 @@ public class URLHelper {
 		System.out.println(uh.subSha1());
 		System.out.println(uh.getHost());
 		System.out.println(uh.getReversedHost());
-		System.out.println(uh.getKey());
+		System.out.println(uh.generateKey());
 	}
 }
