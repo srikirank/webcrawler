@@ -47,7 +47,7 @@ public class WebCrawler extends Configured implements Tool{
 				String body = doc.body().text();
 				Elements links = doc.select("a");
 				for (Element link : links) {
-					byte[] rKey = Bytes.toBytes(++rowKey_Id);
+					byte[] rKey = Bytes.toBytes(String.valueOf(++rowKey_Id));
 					Put put = new Put(rKey);
 					put.add(URL_COLUMN_FAMILY.getBytes(),
 							CONTENT_COLUMN_NAME.getBytes(), Bytes.toBytes(link.text()));
