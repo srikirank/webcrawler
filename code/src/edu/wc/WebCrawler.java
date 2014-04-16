@@ -33,13 +33,13 @@ public class WebCrawler extends Configured implements Tool{
 	static int rowKey_Id = 10;
 
 	public static class CrawlerMapper extends
-			TableMapper<Text, ImmutableBytesWritable> {
+			TableMapper<ImmutableBytesWritable, Writable> {
 		@Override
 		protected void map(ImmutableBytesWritable rowKey, Result result,
 				Context context) throws IOException, InterruptedException {
 			byte[] docIdBytes = rowKey.get();
-			byte[] contentBytes = result.getValue(URL_COLUMN_FAMILY.getBytes(),
-					ADDRESS_COLUMN_NAME.getBytes());
+			byte[] contentBytes = result.getValue(Bytes.toBytes(URL_COLUMN_FAMILY),
+				Bytes.toBytes(ADDRESS_COLUMN_NAME));
 			String content = Bytes.toString(contentBytes);
 			Document doc;
 			try {
@@ -47,14 +47,16 @@ public class WebCrawler extends Configured implements Tool{
 				String body = doc.body().text();
 				Elements links = doc.select("a");
 				for (Element link : links) {
-					context.write(new Text("1"), new ImmutableBytesWritable(
-							link.text().getBytes()));
-				}
+					byte[] rKey = Bytes.toBytes(++rowKey_Id);
+					Put put = new Put(rKey);
+					put.add(URL_COLUMN_FAMILY.getBytes(),
+							CONTENT_COLUMN_NAME.getBytes(), Bytes.toBytes(link.text()));
+						context.write(new ImmutableBytesWritable(rKey), put);
+					}
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
-
 		}
 	}
 
@@ -112,15 +114,15 @@ public class WebCrawler extends Configured implements Tool{
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
 		Scan scan = new Scan();
-		scan.addColumn(URL_COLUMN_FAMILY.getBytes(),
-				ADDRESS_COLUMN_NAME.getBytes());
+		scan.addColumn(Bytes.toBytes(URL_COLUMN_FAMILY),
+				Bytes.toBytes(ADDRESS_COLUMN_NAME));
 		Job job = new Job(conf, "Retrieving seeds from seed table ");
 		job.setJarByClass(WebCrawler.class);
 		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
-				CrawlerMapper.class, Text.class, Writable.class, job, true);
+				CrawlerMapper.class, ImmutableBytesWritable.class, Put.class, job, true);
 		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME,
 				CrawlerReducer.class, job);
-		job.setNumReduceTasks(1);		
+		job.setNumReduceTasks(0);		
 		return job.waitForCompletion(true) ? 0 : 1;
 	}
 }
