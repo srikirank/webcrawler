@@ -49,8 +49,8 @@ public class WebCrawler extends Configured implements Tool{
 				for (Element link : links) {
 					byte[] rKey = Bytes.toBytes(String.valueOf(++rowKey_Id));
 					Put put = new Put(rKey);
-					put.add(URL_COLUMN_FAMILY.getBytes(),
-							CONTENT_COLUMN_NAME.getBytes(), Bytes.toBytes(link.text()));
+					put.add(Bytes.toBytes(URL_COLUMN_FAMILY),
+							Bytes.toBytes(CONTENT_COLUMN_NAME), Bytes.toBytes(link.text()));
 						context.write(new ImmutableBytesWritable(rKey), put);
 					}
 
