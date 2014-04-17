@@ -90,7 +90,7 @@ public class WebCrawler extends Configured implements Tool{
 					Result row = repoTable.get(repoGet);
 					
 					if(row.isEmpty()){
-						Put frontPut = new Put(Bytes.toBytes(uh.generateKey()));
+						Put frontPut = new Put(Bytes.toBytes(uh.sha1()));
 						frontPut.add(urlFamily, addressQual, Bytes.toBytes(toCrawlURL));
 						
 						// this can lead to multiple crawls of the same URL
