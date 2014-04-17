@@ -88,7 +88,7 @@ public class URLHelper {
 
 	public String generateKey() throws NoSuchAlgorithmException {
 		StringBuilder key = getRHost();
-		key.append("-").append(subSha1());
+		key.append("-").append(sha1());
 		return key.toString();
 	}
 
