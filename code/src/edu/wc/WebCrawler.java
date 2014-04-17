@@ -50,8 +50,10 @@ public class WebCrawler extends Configured implements Tool{
 					byte[] rKey = Bytes.toBytes(String.valueOf(++rowKey_Id));
 					Put put = new Put(rKey);
 					put.add(Bytes.toBytes(URL_COLUMN_FAMILY),
-							Bytes.toBytes(CONTENT_COLUMN_NAME), Bytes.toBytes(link.text()));
-						context.write(new ImmutableBytesWritable(rKey), put);
+							Bytes.toBytes(ADDRESS_COLUMN_NAME), Bytes.toBytes(link.absUrl("href")));
+					 put.add(Bytes.toBytes(URL_COLUMN_FAMILY),
+							 Bytes.toBytes(CONTENT_COLUMN_NAME), Bytes.toBytes(body));
+					context.write(new ImmutableBytesWritable(rKey), put);	
 					}
 
 			} catch (Exception ex) {
