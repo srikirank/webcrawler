@@ -8,7 +8,7 @@
 <property>
       <name>fs.default.name</name>
             <!-- URL of MasterNode/NameNode, e.g. hdfs://localhost:9000/ -->
-      <value>hdfs://master:9000/</value>
+      <value>hdfs://127.0.0.1:9000/</value>
 </property>
 
 </configuration>

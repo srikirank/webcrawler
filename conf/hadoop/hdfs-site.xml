@@ -10,19 +10,19 @@
       <name>dfs.http.address</name>
             <!-- HDFS web interface port, please check before using that port #
                             e.g. 0.0.0.0:<unique_port#> -->
-      <value>master:9001</value>
+      <value>0.0.0.0:9001</value>
 </property>
 <property>
       <name>dfs.name.dir</name>
                   <!-- Path to store HDFS name table directory within MasterNode/NameNode
                                   , musr be unique. e.g. /tmp/<your_id>/name-->
-      <value>/root/spring14/hadoop/name</value>
+      <value>/Users/sri/hadoop/name</value>
 </property>
 <property>
       <name>dfs.data.dir</name>
                   <!-- Path to store blocks within DataNodes/Slaves, must be unique.
                                   e.g. /tmp/<your_id>/data -->
-      <value>/root/spring14/hadoop/data</value>
+      <value>/Users/sri/hadoop/data</value>
 </property>
 
 <!-- Please don't change the following properties, or you will not able
@@ -49,6 +49,4 @@
       <name>dfs.replication</name>
       <value>1</value>
 </property>
-
-
 </configuration>
