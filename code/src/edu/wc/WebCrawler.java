@@ -41,7 +41,7 @@ public class WebCrawler extends Configured implements Tool{
 	static int rowKey_Id = 10;
 
 	public static class CrawlerMapper extends
-			TableMapper<ImmutableBytesWritable, Writable> {
+			TableMapper<ImmutableBytesWritable, Text> {
 
 	    private HTable frontTable = null;
 	    private HTable repoTable = null;
@@ -52,7 +52,7 @@ public class WebCrawler extends Configured implements Tool{
 	    @Override
 	    protected void setup(Context context)
 	    throws IOException, InterruptedException {
-	      frontTable = new HTable(context.getConfiguration(), FROINTER_TABLE_NAME); // co ParseJsonMulti-1-Setup Create and configure both target tables in the setup() method.
+	      frontTable = new HTable(context.getConfiguration(), FROINTER_TABLE_NAME);
 //	      frontTable.setAutoFlush(false);
 	      
 	      repoTable = new HTable(context.getConfiguration(),REPOSITORY_TABLE_NAME);
@@ -65,7 +65,6 @@ public class WebCrawler extends Configured implements Tool{
 		@Override
 		protected void map(ImmutableBytesWritable rowKey, Result result,
 				Context context) throws IOException, InterruptedException {
-			byte[] docIdBytes = rowKey.get();
 			byte[] contentBytes = result.getValue(Bytes.toBytes(URL_COLUMN_FAMILY),
 				Bytes.toBytes(ADDRESS_COLUMN_NAME));
 			String crawlingURL = Bytes.toString(contentBytes);
@@ -83,7 +82,8 @@ public class WebCrawler extends Configured implements Tool{
 					String toCrawlURL = link.absUrl("href");
 					processURL(toCrawlURL);
 				}
-				finishCrawling(docIdBytes, crawlingURL);
+				context.write(rowKey, new Text(crawlingURL));
+				// finishCrawling(docIdBytes, crawlingURL);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -130,6 +130,36 @@ public class WebCrawler extends Configured implements Tool{
 
 			return frontRow1.isEmpty() || frontRow2.isEmpty();		
 		}
+	}
+
+	public static class CrawlerReducer extends
+			TableReducer<ImmutableBytesWritable, Text, ImmutableBytesWritable> {
+	    private HTable frontTable = null;
+	    private byte[] urlFamily = null;
+	    private byte[] addressQual = null;
+
+	    @Override
+	    protected void setup(Context context)
+	    throws IOException, InterruptedException {
+	      frontTable = new HTable(context.getConfiguration(), FROINTER_TABLE_NAME); 
+//	      frontTable.setAutoFlush(false);
+	      urlFamily = Bytes.toBytes(URL_COLUMN_FAMILY);
+	      addressQual = Bytes.toBytes(ADDRESS_COLUMN_NAME);
+	    }
+
+		@Override
+		public void reduce(ImmutableBytesWritable rowKey, Iterable<Text> crawlingURLs,
+				Context context) throws IOException, InterruptedException {
+
+			for (Text crawlingURL : crawlingURLs) {
+				try {
+					finishCrawling(rowKey.get(), crawlingURL.toString());
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+
+		}		
 
 		private void finishCrawling(byte[] rowKey, String currentURL) throws NoSuchAlgorithmException, IOException{
 			URLHelper uh = new URLHelper(currentURL);
@@ -143,29 +173,7 @@ public class WebCrawler extends Configured implements Tool{
 			Put frontPut = new Put(rowKey);
 	        frontPut.add(urlFamily, addressQual, Bytes.toBytes(currentURL));        
 			frontTable.put(frontPut);		
-		}		
-	}
-
-	public static class CrawlerReducer extends
-			TableReducer<Text, ImmutableBytesWritable, ImmutableBytesWritable> {
-		@Override
-		public void reduce(Text word, Iterable<ImmutableBytesWritable> freqs,
-				Context context) throws IOException, InterruptedException {
-			Put put = null;
-			for (ImmutableBytesWritable value : freqs) {
-				put = new Put(String.valueOf(++rowKey_Id).getBytes());
-				put.add(URL_COLUMN_FAMILY.getBytes(),
-						CONTENT_COLUMN_NAME.getBytes(), value.get());
-				try {
-					context.write(
-							new ImmutableBytesWritable(String
-									.valueOf(rowKey_Id).getBytes()), put);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-
-		}
+		}				
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -189,9 +197,10 @@ public class WebCrawler extends Configured implements Tool{
 		job.setJarByClass(WebCrawler.class);
 		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
 				CrawlerMapper.class, ImmutableBytesWritable.class, Writable.class, job);
-		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME,
-				CrawlerReducer.class, job);
-		job.setNumReduceTasks(0);
+		job.setReducerClass(CrawlerReducer.class);
+		job.setOutputKeyClass(ImmutableBytesWritable.class);
+		job.setOutputValueClass(Writable.class);
+		job.setNumReduceTasks(1);
 				
 		return job.waitForCompletion(true) ? 0 : 1;
 	}
