@@ -136,6 +136,7 @@ public class WebCrawler extends Configured implements Tool{
 
 			Delete frontDelete = new Delete(rowKey);
 			frontDelete.deleteFamily(urlFamily);
+			frontTable.delete(frontDelete);
 
 			rowKey = Bytes.toBytes("crawled-" + uh.sha1());
 
