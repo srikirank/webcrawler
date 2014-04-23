@@ -1,10 +1,12 @@
 package edu.wc;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -70,39 +72,77 @@ public class WebCrawler extends Configured implements Tool{
 			
 			Document doc;
 			try {
-				URLHelper uh = new URLHelper(crawlingURL);
-				String crawlingURLKey = uh.generateKey();
-				
 				doc = Jsoup.connect(crawlingURL).get();				
-				String body = doc.body().text();
-
-		        Put repoPut = new Put(Bytes.toBytes(crawlingURLKey));
-		        repoPut.add(urlFamily, addressQual, Bytes.toBytes(crawlingURL));
-				repoPut.add(urlFamily, contentQual, Bytes.toBytes(body));
-				repoTable.put(repoPut);
+				String body = doc.body().text();				
+				addNewURLtoRepository(crawlingURL, body);
 				
 				Elements links = doc.select("a");
 				
 				for (Element link : links) {
+
 					String toCrawlURL = link.absUrl("href");
-					uh.setURL(toCrawlURL);
-					Get repoGet = new Get(Bytes.toBytes(uh.generateKey()));
-					Result row = repoTable.get(repoGet);
-					
-					if(row.isEmpty()){
-						Put frontPut = new Put(Bytes.toBytes(uh.sha1()));
-						frontPut.add(urlFamily, addressQual, Bytes.toBytes(toCrawlURL));
-						
-						// this can lead to multiple crawls of the same URL
-						// and hence to DoS attack
-						frontTable.put(frontPut);
-					}
+					processURL(toCrawlURL);
 				}
+				finishCrawling(docIdBytes, crawlingURL);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
+
+		private void processURL(String toCrawlURL) throws NoSuchAlgorithmException, IOException{
+			URLHelper uh = new URLHelper(toCrawlURL);
+			if(!isCrawled(toCrawlURL)){
+				if(!isTrackedFrontier(toCrawlURL)){
+					Put frontPut = new Put(Bytes.toBytes("toCrawl-" + uh.sha1()));
+					frontPut.add(urlFamily, addressQual, Bytes.toBytes(toCrawlURL));
+
+					frontTable.put(frontPut);							
+				}
+			}						
+		}
+
+		private boolean isCrawled(String checkURL) throws IOException, NoSuchAlgorithmException{
+			URLHelper uh = new URLHelper(checkURL);
+
+			Get repoGet = new Get(Bytes.toBytes(uh.generateKey()));
+			Result repoRow = repoTable.get(repoGet);
+			return !(repoRow.isEmpty());		
+		}
+
+		private void addNewURLtoRepository(String addURL, String body) throws NoSuchAlgorithmException, IOException{
+			URLHelper uh = new URLHelper(addURL);
+			String urlKey = uh.generateKey();
+					
+	        Put repoPut = new Put(Bytes.toBytes(urlKey));
+	        repoPut.add(urlFamily, addressQual, Bytes.toBytes(addURL));
+			repoPut.add(urlFamily, contentQual, Bytes.toBytes(body));
+			repoTable.put(repoPut);
+		}
+
+		private boolean isTrackedFrontier(String checkURL) throws NoSuchAlgorithmException, IOException{
+			URLHelper uh = new URLHelper(checkURL);
+
+			Get frontGet1 = new Get(Bytes.toBytes("toCrawl-" + uh.sha1()));
+			Get frontGet2 = new Get(Bytes.toBytes("crawled-" + uh.sha1()));
+			Result frontRow1 = frontTable.get(frontGet1);
+			Result frontRow2 = frontTable.get(frontGet2);
+
+			return frontRow1.isEmpty() || frontRow2.isEmpty();		
+		}
+
+		private void finishCrawling(byte[] rowKey, String currentURL) throws NoSuchAlgorithmException, IOException{
+			URLHelper uh = new URLHelper(currentURL);
+
+			Delete frontDelete = new Delete(rowKey);
+			frontDelete.deleteFamily(urlFamily);
+
+			rowKey = Bytes.toBytes("crawled-" + uh.sha1());
+
+			Put frontPut = new Put(rowKey);
+	        frontPut.add(urlFamily, addressQual, Bytes.toBytes(currentURL));        
+			frontTable.put(frontPut);		
+		}		
 	}
 
 	public static class CrawlerReducer extends
