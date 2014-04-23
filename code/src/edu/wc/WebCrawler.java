@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -19,8 +20,8 @@ import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.jsoup.Jsoup;
@@ -200,6 +201,7 @@ public class WebCrawler extends Configured implements Tool{
 		job.setReducerClass(CrawlerReducer.class);
 		job.setOutputKeyClass(ImmutableBytesWritable.class);
 		job.setOutputValueClass(Writable.class);
+		FileOutputFormat.setOutputPath(job, new Path("out"));
 		job.setNumReduceTasks(1);
 				
 		return job.waitForCompletion(true) ? 0 : 1;
