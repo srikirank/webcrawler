@@ -1,6 +1,7 @@
 package edu.wc;
 
 import java.io.IOException;
+import edu.utilities.Constants;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -33,61 +34,39 @@ import org.jsoup.select.Elements;
 
 import edu.utilities.URLHelper;
 
-public class WebCrawler extends Configured implements Tool{
-
-	static final String FROINTER_TABLE_NAME = "frontier";
-	static final String REPOSITORY_TABLE_NAME = "repository";
-	static final String CRAWLED_TABLE_NAME = "crawled";
-	static final String URL_COLUMN_FAMILY = "URL";
-	static final String OUTGOING_COLUMN_FAMILY = "outgoing";
-	static final String ADDRESS_COLUMN_NAME = "address";
-	static final String CONTENT_COLUMN_NAME = "content";
-	static final String LINKS_COLUMN_NAME = "links";
+public class WebCrawler extends Configured implements Tool {
 
 	static int rowKey_Id = 10;
 
 	public static class CrawlerMapper extends
-			Mapper<LongWritable, Text,Text,Text> {
+			Mapper<LongWritable, Text, Text, Text> {
 
-	    private HTable frontTable = null;
-	    private HTable repoTable = null;
-	    private HTable crawledTable = null;
-	    private byte[] urlFamily = null;
-	    private byte[] outgoingFamily = null;
-	    private byte[] addressQual = null;
-	    private byte[] contentQual = null;
-	    private byte[] linksQual = null;
-
-	    @Override
-	    protected void setup(Context context)
-	    throws IOException, InterruptedException {
-	      frontTable = new HTable(context.getConfiguration(), FROINTER_TABLE_NAME);
-//	      frontTable.setAutoFlush(false);
-	      
-	      repoTable = new HTable(context.getConfiguration(),REPOSITORY_TABLE_NAME);
-//	      repoTable.setAutoFlush(false);
-	      
-	      crawledTable = new HTable(context.getConfiguration(),CRAWLED_TABLE_NAME);
-//	      crawledTable.setAutoFlush(false);
-	      urlFamily = Bytes.toBytes(URL_COLUMN_FAMILY);
-	      outgoingFamily = Bytes.toBytes(OUTGOING_COLUMN_FAMILY);
-	      
-	      addressQual = Bytes.toBytes(ADDRESS_COLUMN_NAME);
-	      contentQual = Bytes.toBytes(CONTENT_COLUMN_NAME);
-	      linksQual = Bytes.toBytes(LINKS_COLUMN_NAME);
-	    }
+		private HTable frontTable = null;
+		private HTable repoTable = null;
+		private HTable crawledTable = null;
 
 		@Override
-		protected void map(LongWritable key, Text value,
-				Context context) throws IOException, InterruptedException {
-		
-			String crawlingURL = value.toString();
+		protected void setup(Context context) throws IOException,
+				InterruptedException {
+			repoTable = new HTable(context.getConfiguration(),
+					Constants.TABLE_REPOSITORY);
+			// repoTable.setAutoFlush(false);
+
+			crawledTable = new HTable(context.getConfiguration(),
+					Constants.TABLE_CRAWLED);
+			// crawledTable.setAutoFlush(false);
+		}
+
+		@Override
+		protected void map(LongWritable key, Text value, Context context)
+				throws IOException, InterruptedException {
+
+			String crawlingURL = value.toString().split(",")[1];
 			try {
 				Document doc;
-			
-				doc = Jsoup.connect(crawlingURL).get();								
-				addNewURL(crawlingURL,doc,context);
-				
+
+				doc = Jsoup.connect(crawlingURL).get();
+				processURL(crawlingURL, doc, context);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -95,68 +74,47 @@ public class WebCrawler extends Configured implements Tool{
 		}
 
 		@Override
-		protected void cleanup(Context context) throws IOException, InterruptedException {
+		protected void cleanup(Context context) throws IOException,
+				InterruptedException {
 			super.cleanup(context);
 
 			repoTable.close();
 			frontTable.close();
 		}
-		
-		private void processURL(String toCrawlURL) throws NoSuchAlgorithmException, IOException{
-			URLHelper uh = new URLHelper(toCrawlURL);
-			Put frontPut = new Put(Bytes.toBytes(uh.sha1()));
-			frontPut.add(urlFamily, addressQual, Bytes.toBytes(toCrawlURL));
 
-			frontTable.put(frontPut);							
-		}
-
-
-		private void addNewURL(String addURL, Document doc, Context context) throws NoSuchAlgorithmException, IOException, InterruptedException{
+		private void processURL(String addURL, Document doc, Context context)
+				throws NoSuchAlgorithmException, IOException,
+				InterruptedException {
 			URLHelper uh = new URLHelper(addURL);
-			String urlKey = uh.generateKey();
-			Put repoPut = new Put(Bytes.toBytes(urlKey));
-			Put crawledPut = new Put(Bytes.toBytes(urlKey));
-			
-			crawledPut.add(urlFamily,addressQual,Bytes.toBytes(addURL));
+			String repoKey = uh.generateKey();
+			Put repoPut = new Put(Bytes.toBytes(repoKey));
+			String crawledKey = uh.getTopDomain();
+			Put crawledPut = new Put(Bytes.toBytes(crawledKey));
+
+			crawledPut.add(Constants.COLUMNFAMILY_URLS_BYTES,
+					Bytes.toBytes(uh.sha1()), Bytes.toBytes(addURL));
 			crawledTable.put(crawledPut);
-			
+
 			String body = doc.body().text();
-			StringBuffer sb = new StringBuffer();  
+			StringBuffer sb = new StringBuffer();
 			Elements links = doc.select("a");
-			
+
 			for (Element link : links) {
 				String toCrawlURL = link.absUrl("href");
-				processURL(toCrawlURL);
 				uh.setURL(toCrawlURL);
 				sb.append(uh.sha1()).append(",");
 				context.write(new Text(uh.getDomain()), new Text(toCrawlURL));
-			}					
-			
-			String outLinks = sb.substring(0, sb.length()-1);
-	        repoPut.add(urlFamily, addressQual, Bytes.toBytes(addURL));
-			repoPut.add(urlFamily, contentQual, Bytes.toBytes(body));
-			repoPut.add(outgoingFamily,linksQual,Bytes.toBytes(outLinks));
+			}
+
+			String outLinks = sb.substring(0, sb.length() - 1);
+			repoPut.add(Constants.COLUMNFAMILY_URL_BYTES,
+					Constants.QUALIFIER_ADDRESS_BYTES, Bytes.toBytes(addURL));
+			repoPut.add(Constants.COLUMNFAMILY_CONTENT_BYTES,
+					Constants.QUALIFIER_BODY_BYTES, Bytes.toBytes(body));
+			repoPut.add(Constants.COLUMNFAMILY_OUTGOING_BYTES,
+					Constants.QUALIFIER_LINKS_BYTES, Bytes.toBytes(outLinks));
 			repoTable.put(repoPut);
 		}
-	}
-
-	public static class CrawlerReducer extends
-			Reducer<Text, Text, ImmutableBytesWritable, Writable> {
-
-	    @Override
-		public void reduce(Text domain, Iterable<Text> crawlingURLs,
-				Context context) throws IOException, InterruptedException {
-
-		}
-	    
-		private boolean isCrawled(String checkURL) throws IOException, NoSuchAlgorithmException{
-			URLHelper uh = new URLHelper(checkURL);
-
-			Get repoGet = new Get(Bytes.toBytes(uh.sha1()));
-			Result repoRow = repoTable.get(repoGet);
-			return !repoRow.isEmpty();		
-		}
-
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -176,12 +134,12 @@ public class WebCrawler extends Configured implements Tool{
 		job.setJarByClass(WebCrawler.class);
 		job.setMapperClass(CrawlerMapper.class);
 		job.setReducerClass(CrawlerReducer.class);
-		
+
 		job.setOutputKeyClass(NullWritable.class);
-	    job.setOutputValueClass(Text.class);
-	    FileInputFormat.addInputPath(job, new Path("input"));
-	    FileOutputFormat.setOutputPath(job, new Path("output"));
-	    
+		job.setOutputValueClass(Text.class);
+		FileInputFormat.addInputPath(job, new Path("input/subset_seedurls.csv"));
+		FileOutputFormat.setOutputPath(job, new Path("output"));
+
 		return job.waitForCompletion(true) ? 0 : 1;
 	}
 }
