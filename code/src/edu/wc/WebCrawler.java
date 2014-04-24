@@ -66,12 +66,14 @@ public class WebCrawler extends Configured implements Tool{
 		@Override
 		protected void map(ImmutableBytesWritable rowKey, Result result,
 				Context context) throws IOException, InterruptedException {
-			byte[] docIdBytes = rowKey.get();
 			byte[] crawlingURLBytes = result.getValue(urlFamily,addressQual);
 			String crawlingURL = Bytes.toString(crawlingURLBytes);
-			
-			Document doc;
 			try {
+				if(isCrawled(crawlingURL))
+					return;
+				
+				Document doc;
+			
 				doc = Jsoup.connect(crawlingURL).get();				
 				String body = doc.body().text();				
 				addNewURLtoRepository(crawlingURL, body);
@@ -79,12 +81,9 @@ public class WebCrawler extends Configured implements Tool{
 				Elements links = doc.select("a");
 				
 				for (Element link : links) {
-
 					String toCrawlURL = link.absUrl("href");
 					processURL(toCrawlURL);
 				}
-				// context.write(rowKey, new Text(crawlingURL));
-//				finishCrawling(docIdBytes, crawlingURL);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -92,10 +91,9 @@ public class WebCrawler extends Configured implements Tool{
 		}
 
 		@Override
-		protected void cleanup(
-				org.apache.hadoop.mapreduce.Mapper.Context context)
-				throws IOException, InterruptedException {
+		protected void cleanup(Context context) throws IOException, InterruptedException {
 			super.cleanup(context);
+
 			repoTable.close();
 			frontTable.close();
 		}
@@ -103,19 +101,17 @@ public class WebCrawler extends Configured implements Tool{
 		private void processURL(String toCrawlURL) throws NoSuchAlgorithmException, IOException{
 			URLHelper uh = new URLHelper(toCrawlURL);
 			if(!isCrawled(toCrawlURL)){
-				if(!isTrackedFrontier(toCrawlURL)){
-					Put frontPut = new Put(Bytes.toBytes("toCrawl-" + uh.sha1()));
+					Put frontPut = new Put(Bytes.toBytes(uh.sha1()));
 					frontPut.add(urlFamily, addressQual, Bytes.toBytes(toCrawlURL));
 
 					frontTable.put(frontPut);							
-				}
 			}						
 		}
 
 		private boolean isCrawled(String checkURL) throws IOException, NoSuchAlgorithmException{
 			URLHelper uh = new URLHelper(checkURL);
 
-			Get repoGet = new Get(Bytes.toBytes(uh.generateKey()));
+			Get repoGet = new Get(Bytes.toBytes(uh.sha1()));
 			Result repoRow = repoTable.get(repoGet);
 			return !repoRow.isEmpty();		
 		}
@@ -129,75 +125,16 @@ public class WebCrawler extends Configured implements Tool{
 			repoPut.add(urlFamily, contentQual, Bytes.toBytes(body));
 			repoTable.put(repoPut);
 		}
-
-		private boolean isTrackedFrontier(String checkURL) throws NoSuchAlgorithmException, IOException{
-			URLHelper uh = new URLHelper(checkURL);
-
-			Get frontGet1 = new Get(Bytes.toBytes("toCrawl-" + uh.sha1()));
-			Get frontGet2 = new Get(Bytes.toBytes("crawled-" + uh.sha1()));
-			Result frontRow1 = frontTable.get(frontGet1);
-			Result frontRow2 = frontTable.get(frontGet2);
-
-			return frontRow1.isEmpty() || frontRow2.isEmpty();		
-		}
-
-		private void finishCrawling(byte[] rowKey, String currentURL) throws NoSuchAlgorithmException, IOException{
-			URLHelper uh = new URLHelper(currentURL);
-
-			Delete frontDelete = new Delete(rowKey);
-			frontDelete.deleteFamily(urlFamily);
-			frontTable.delete(frontDelete);
-
-			rowKey = Bytes.toBytes("crawled-" + uh.sha1());
-
-			Put frontPut = new Put(rowKey);
-	        frontPut.add(urlFamily, addressQual, Bytes.toBytes(currentURL));        
-			frontTable.put(frontPut);		
-		}						
 	}
 
 	public static class CrawlerReducer extends
 			TableReducer<ImmutableBytesWritable, Text, ImmutableBytesWritable> {
-	    private HTable frontTable = null;
-	    private byte[] urlFamily = null;
-	    private byte[] addressQual = null;
 
 	    @Override
-	    protected void setup(Context context)
-	    throws IOException, InterruptedException {
-	      frontTable = new HTable(context.getConfiguration(), FROINTER_TABLE_NAME); 
-//	      frontTable.setAutoFlush(false);
-	      urlFamily = Bytes.toBytes(URL_COLUMN_FAMILY);
-	      addressQual = Bytes.toBytes(ADDRESS_COLUMN_NAME);
-	    }
-
-		@Override
 		public void reduce(ImmutableBytesWritable rowKey, Iterable<Text> crawlingURLs,
 				Context context) throws IOException, InterruptedException {
 
-			for (Text crawlingURL : crawlingURLs) {
-				try {
-					finishCrawling(rowKey.get(), crawlingURL.toString());
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-
 		}		
-
-		private void finishCrawling(byte[] rowKey, String currentURL) throws NoSuchAlgorithmException, IOException{
-			URLHelper uh = new URLHelper(currentURL);
-
-			Delete frontDelete = new Delete(rowKey);
-			frontDelete.deleteFamily(urlFamily);
-			frontTable.delete(frontDelete);
-
-			rowKey = Bytes.toBytes("crawled-" + uh.sha1());
-
-			Put frontPut = new Put(rowKey);
-	        frontPut.add(urlFamily, addressQual, Bytes.toBytes(currentURL));        
-			frontTable.put(frontPut);		
-		}				
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -222,11 +159,6 @@ public class WebCrawler extends Configured implements Tool{
 		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
 				CrawlerMapper.class, ImmutableBytesWritable.class, Writable.class, job);
 		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME, CrawlerReducer.class, job);
-
-		// job.setReducerClass(CrawlerReducer.class);
-		// job.setOutputKeyClass(ImmutableBytesWritable.class);
-		// job.setOutputValueClass(Writable.class);
-		// FileOutputFormat.setOutputPath(job, new Path("out"));
 		job.setNumReduceTasks(0);
 				
 		return job.waitForCompletion(true) ? 0 : 1;
