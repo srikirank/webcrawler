@@ -149,7 +149,7 @@ public class WebCrawler extends Configured implements Tool{
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
 
-		Scan scan = new Scan(Bytes.toBytes("t"));
+		Scan scan = new Scan();
 		scan.addColumn(Bytes.toBytes(URL_COLUMN_FAMILY),
 				Bytes.toBytes(ADDRESS_COLUMN_NAME));
 
