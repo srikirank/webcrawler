@@ -104,7 +104,7 @@ public class URLHelper {
 		URLHelper uh = new URLHelper();
 		uh.setURL("http://www.sha1-online.com/sha1-java/");
 		System.out.println(uh.sha1());
-		uh.setURL("http://www.sha1-online.com/");
+		uh.setURL("http://" + "sha1-online.com");
 		System.out.println(uh.sha1());
 		System.out.println(uh.subSha1());
 		System.out.println(uh.getHost());
