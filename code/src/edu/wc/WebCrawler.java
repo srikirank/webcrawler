@@ -5,7 +5,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.Path;
+//import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -21,7 +21,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+//import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.jsoup.Jsoup;
@@ -66,9 +66,9 @@ public class WebCrawler extends Configured implements Tool{
 		@Override
 		protected void map(ImmutableBytesWritable rowKey, Result result,
 				Context context) throws IOException, InterruptedException {
-			byte[] contentBytes = result.getValue(Bytes.toBytes(URL_COLUMN_FAMILY),
-				Bytes.toBytes(ADDRESS_COLUMN_NAME));
-			String crawlingURL = Bytes.toString(contentBytes);
+			byte[] docIdBytes = rowKey.get();
+			byte[] crawlingURLBytes = result.getValue(urlFamily,addressQual);
+			String crawlingURL = Bytes.toString(crawlingURLBytes);
 			
 			Document doc;
 			try {
@@ -83,14 +83,23 @@ public class WebCrawler extends Configured implements Tool{
 					String toCrawlURL = link.absUrl("href");
 					processURL(toCrawlURL);
 				}
-				context.write(rowKey, new Text(crawlingURL));
-				// finishCrawling(docIdBytes, crawlingURL);
+				// context.write(rowKey, new Text(crawlingURL));
+//				finishCrawling(docIdBytes, crawlingURL);
 
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 
+		@Override
+		protected void cleanup(
+				org.apache.hadoop.mapreduce.Mapper.Context context)
+				throws IOException, InterruptedException {
+			super.cleanup(context);
+			repoTable.close();
+			frontTable.close();
+		}
+		
 		private void processURL(String toCrawlURL) throws NoSuchAlgorithmException, IOException{
 			URLHelper uh = new URLHelper(toCrawlURL);
 			if(!isCrawled(toCrawlURL)){
@@ -108,7 +117,7 @@ public class WebCrawler extends Configured implements Tool{
 
 			Get repoGet = new Get(Bytes.toBytes(uh.generateKey()));
 			Result repoRow = repoTable.get(repoGet);
-			return !(repoRow.isEmpty());		
+			return !repoRow.isEmpty();		
 		}
 
 		private void addNewURLtoRepository(String addURL, String body) throws NoSuchAlgorithmException, IOException{
@@ -131,6 +140,20 @@ public class WebCrawler extends Configured implements Tool{
 
 			return frontRow1.isEmpty() || frontRow2.isEmpty();		
 		}
+
+		private void finishCrawling(byte[] rowKey, String currentURL) throws NoSuchAlgorithmException, IOException{
+			URLHelper uh = new URLHelper(currentURL);
+
+			Delete frontDelete = new Delete(rowKey);
+			frontDelete.deleteFamily(urlFamily);
+			frontTable.delete(frontDelete);
+
+			rowKey = Bytes.toBytes("crawled-" + uh.sha1());
+
+			Put frontPut = new Put(rowKey);
+	        frontPut.add(urlFamily, addressQual, Bytes.toBytes(currentURL));        
+			frontTable.put(frontPut);		
+		}						
 	}
 
 	public static class CrawlerReducer extends
@@ -198,11 +221,13 @@ public class WebCrawler extends Configured implements Tool{
 		job.setJarByClass(WebCrawler.class);
 		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
 				CrawlerMapper.class, ImmutableBytesWritable.class, Writable.class, job);
-		job.setReducerClass(CrawlerReducer.class);
-		job.setOutputKeyClass(ImmutableBytesWritable.class);
-		job.setOutputValueClass(Writable.class);
-		FileOutputFormat.setOutputPath(job, new Path("out"));
-		job.setNumReduceTasks(1);
+		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME, CrawlerReducer.class, job);
+
+		// job.setReducerClass(CrawlerReducer.class);
+		// job.setOutputKeyClass(ImmutableBytesWritable.class);
+		// job.setOutputValueClass(Writable.class);
+		// FileOutputFormat.setOutputPath(job, new Path("out"));
+		job.setNumReduceTasks(0);
 				
 		return job.waitForCompletion(true) ? 0 : 1;
 	}
