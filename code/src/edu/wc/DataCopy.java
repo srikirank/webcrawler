@@ -33,7 +33,7 @@ import org.jsoup.select.Elements;
 
 import edu.utilities.URLHelper;
 
-public class WebCrawler extends Configured implements Tool{
+public class DataCopy extends Configured implements Tool{
 
 	static final String FROINTER_TABLE_NAME = "frontier";
 	static final String REPOSITORY_TABLE_NAME = "repository";
@@ -149,19 +149,11 @@ public class WebCrawler extends Configured implements Tool{
 
 		}
 	    
-		private boolean isCrawled(String checkURL) throws IOException, NoSuchAlgorithmException{
-			URLHelper uh = new URLHelper(checkURL);
-
-			Get repoGet = new Get(Bytes.toBytes(uh.sha1()));
-			Result repoRow = repoTable.get(repoGet);
-			return !repoRow.isEmpty();		
-		}
-
 	}
 
 	public static void main(String[] args) throws Exception {
 		Configuration conf = HBaseConfiguration.create();
-		int res = ToolRunner.run(conf, new WebCrawler(), args);
+		int res = ToolRunner.run(conf, new DataCopy(), args);
 		System.exit(res);
 	}
 
@@ -171,10 +163,10 @@ public class WebCrawler extends Configured implements Tool{
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
 
-		Job job = new Job(conf, "Retrieving seeds from frontier table ");
+		Job job = new Job(conf, "Loading the top 1 Million URLs");
 
-		job.setJarByClass(WebCrawler.class);
-		job.setMapperClass(CrawlerMapper.class);
+		job.setJarByClass(DataCopy.class);
+	    job.setMapperClass(ImportMapper.class);
 		job.setReducerClass(CrawlerReducer.class);
 		
 		job.setOutputKeyClass(NullWritable.class);

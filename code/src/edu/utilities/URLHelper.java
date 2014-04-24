@@ -96,6 +96,10 @@ public class URLHelper {
 		return key.toString();
 	}
 
+	public String generateTopDomain(){
+		return null;
+	}
+	
 	public static void main(String[] args) throws NoSuchAlgorithmException {
 		URLHelper uh = new URLHelper();
 		uh.setURL("http://www.sha1-online.com/sha1-java/");
