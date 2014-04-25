@@ -112,5 +112,6 @@ public class URLHelper {
 		URLHelper uh = new URLHelper();
 		uh.setURL("http://" + "abc.cde.sha1-online.com");
 		System.out.println(uh.generateKey());		
+		System.out.println(uh.getTopDomain());		
 	}
 }

@@ -9,21 +9,16 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 //import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 //import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -41,7 +36,6 @@ public class WebCrawler extends Configured implements Tool {
 	public static class CrawlerMapper extends
 			Mapper<LongWritable, Text, Text, Text> {
 
-		private HTable frontTable = null;
 		private HTable repoTable = null;
 		private HTable crawledTable = null;
 
@@ -61,15 +55,17 @@ public class WebCrawler extends Configured implements Tool {
 		protected void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 
-			String crawlingURL = value.toString().split(",")[1];
+			String crawlingURL = "http://" + value.toString().split(",")[1];
 			try {
-				Document doc;
+				Document doc = null;
 
 				doc = Jsoup.connect(crawlingURL).get();
+				if(doc != null)
 				processURL(crawlingURL, doc, context);
 
 			} catch (Exception ex) {
-				ex.printStackTrace();
+				System.out.println("Exception while parsing file ::" + ex.getMessage());
+				//ex.printStackTrace();
 			}
 		}
 
@@ -79,7 +75,6 @@ public class WebCrawler extends Configured implements Tool {
 			super.cleanup(context);
 
 			repoTable.close();
-			frontTable.close();
 		}
 
 		private void processURL(String addURL, Document doc, Context context)
@@ -90,7 +85,7 @@ public class WebCrawler extends Configured implements Tool {
 			Put repoPut = new Put(Bytes.toBytes(repoKey));
 			String crawledKey = uh.getTopDomain();
 			Put crawledPut = new Put(Bytes.toBytes(crawledKey));
-
+			String outLinks = null;
 			crawledPut.add(Constants.COLUMNFAMILY_URLS_BYTES,
 					Bytes.toBytes(uh.sha1()), Bytes.toBytes(addURL));
 			crawledTable.put(crawledPut);
@@ -103,16 +98,19 @@ public class WebCrawler extends Configured implements Tool {
 				String toCrawlURL = link.absUrl("href");
 				uh.setURL(toCrawlURL);
 				sb.append(uh.sha1()).append(",");
-				context.write(new Text(uh.getDomain()), new Text(toCrawlURL));
+				context.write(new Text(uh.getTopDomain()), new Text(toCrawlURL));
 			}
-
-			String outLinks = sb.substring(0, sb.length() - 1);
+            if(sb.length() > 0){
+			outLinks = sb.substring(0, sb.length() - 1);
+            }
 			repoPut.add(Constants.COLUMNFAMILY_URL_BYTES,
 					Constants.QUALIFIER_ADDRESS_BYTES, Bytes.toBytes(addURL));
 			repoPut.add(Constants.COLUMNFAMILY_CONTENT_BYTES,
 					Constants.QUALIFIER_BODY_BYTES, Bytes.toBytes(body));
+			if(outLinks != null){
 			repoPut.add(Constants.COLUMNFAMILY_OUTGOING_BYTES,
 					Constants.QUALIFIER_LINKS_BYTES, Bytes.toBytes(outLinks));
+			}
 			repoTable.put(repoPut);
 		}
 	}
@@ -124,7 +122,7 @@ public class WebCrawler extends Configured implements Tool {
 	}
 
 	@Override
-	public int run(String[] arg0) throws Exception {
+	public int run(String[] args) throws Exception {
 		Configuration conf = super.getConf();
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
@@ -135,10 +133,14 @@ public class WebCrawler extends Configured implements Tool {
 		job.setMapperClass(CrawlerMapper.class);
 		job.setReducerClass(CrawlerReducer.class);
 
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(Text.class);
 		job.setOutputKeyClass(NullWritable.class);
 		job.setOutputValueClass(Text.class);
-		FileInputFormat.addInputPath(job, new Path("input/subset_seedurls.csv"));
-		FileOutputFormat.setOutputPath(job, new Path("output"));
+
+		FileInputFormat
+				.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
 		return job.waitForCompletion(true) ? 0 : 1;
 	}

@@ -29,6 +29,7 @@ public class CrawlerReducer extends Reducer<Text, Text, NullWritable, Text> {
 				Constants.TABLE_CRAWLED);
 	}
 
+	@Override
 	protected void reduce(Text key, Iterable<Text> value, Context context)
 			throws IOException, InterruptedException {
 
@@ -39,7 +40,7 @@ public class CrawlerReducer extends Reducer<Text, Text, NullWritable, Text> {
 		if (mResult.isEmpty()) {
 			for (Text newURL : value) {
 				if (uniqueURLs.add(newURL.toString())) {
-					context.write(out, key);
+					context.write(out, newURL);
 				}
 			}
 		} else {
