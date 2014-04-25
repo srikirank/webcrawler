@@ -107,7 +107,7 @@ public class PageRank extends Configured implements Tool {
 		job.setReducerClass(PageRankReducer.class);
 
 		TableMapReduceUtil.initTableMapperJob(
-				Constants.TABLE_REPOSITORY, scan, PageRankMapper.class, Text.class, LongWritable.class, job, true
+				Constants.TABLE_REPOSITORY, scan, PageRankMapper.class, Text.class, Text.class, job, true
 				);
 		/*
 		 * Here add the output path to the hdfs file name in the first argument

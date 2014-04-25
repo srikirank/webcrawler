@@ -40,4 +40,5 @@ export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:`echo "$LIBJARS" | sed s/,/:/g`
 #source ~/.bashrc
 
 # run wordcount
-hadoop jar $HADOOP_INSTALL/lib/WebCrawling.jar edu.wc.WebCrawler -libjars "$LIBJARS"
+#hadoop jar $HADOOP_INSTALL/lib/WebCrawling.jar edu.wc.WebCrawler -libjars "$LIBJARS"
+hadoop jar $HADOOP_INSTALL/lib/WebCrawling.jar edu.wc.PageRank -libjars "$LIBJARS" $1
