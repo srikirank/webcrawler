@@ -128,7 +128,7 @@ public class WebCrawler extends Configured implements Tool {
 		int res = 0;
 		String givenOutput = args[3];
 		long startTime = System.currentTimeMillis();
-		long totalTimeToRun = Long.parseLong(args[5])*60*1000;
+		long totalTimeToRun = Long.parseLong(args[4])*60*1000;
 		WebCrawler wc = new WebCrawler();
 		while (wc.numberToCrawl > 0 && (System.currentTimeMillis() - startTime) < totalTimeToRun) {
 			conf = HBaseConfiguration.create();
@@ -158,9 +158,10 @@ public class WebCrawler extends Configured implements Tool {
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
-		numberToCrawl = job.getCounters().findCounter(newURLS.NEW).getValue();
+
 		job.setNumReduceTasks(4);
 		res = job.waitForCompletion(true) ? 0 : 1;
+		numberToCrawl = job.getCounters().findCounter(newURLS.NEW).getValue();
 		return res;
 	}
 }
