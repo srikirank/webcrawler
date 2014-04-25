@@ -1,9 +1,10 @@
 package edu.wc;
 
 import java.io.IOException;
-import edu.utilities.Constants;
-import java.security.NoSuchAlgorithmException;
 
+import edu.utilities.Constants;
+
+import java.security.NoSuchAlgorithmException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -32,6 +33,11 @@ import edu.utilities.URLHelper;
 public class WebCrawler extends Configured implements Tool {
 
 	static int rowKey_Id = 10;
+	long numberToCrawl = 1;
+
+	enum newURLS {
+		NEW;
+	}
 
 	public static class CrawlerMapper extends
 			Mapper<LongWritable, Text, Text, Text> {
@@ -60,12 +66,13 @@ public class WebCrawler extends Configured implements Tool {
 				Document doc = null;
 
 				doc = Jsoup.connect(crawlingURL).get();
-				if(doc != null)
-				processURL(crawlingURL, doc, context);
+				if (doc != null)
+					processURL(crawlingURL, doc, context);
 
 			} catch (Exception ex) {
-				System.out.println("Exception while parsing file ::" + ex.getMessage());
-				//ex.printStackTrace();
+				System.out.println("Exception while parsing file ::"
+						+ ex.getMessage());
+				// ex.printStackTrace();
 			}
 		}
 
@@ -100,24 +107,37 @@ public class WebCrawler extends Configured implements Tool {
 				sb.append(uh.sha1()).append(",");
 				context.write(new Text(uh.getTopDomain()), new Text(toCrawlURL));
 			}
-            if(sb.length() > 0){
-			outLinks = sb.substring(0, sb.length() - 1);
-            }
+			if (sb.length() > 0) {
+				outLinks = sb.substring(0, sb.length() - 1);
+			}
 			repoPut.add(Constants.COLUMNFAMILY_URL_BYTES,
 					Constants.QUALIFIER_ADDRESS_BYTES, Bytes.toBytes(addURL));
 			repoPut.add(Constants.COLUMNFAMILY_CONTENT_BYTES,
 					Constants.QUALIFIER_BODY_BYTES, Bytes.toBytes(body));
-			if(outLinks != null){
-			repoPut.add(Constants.COLUMNFAMILY_OUTGOING_BYTES,
-					Constants.QUALIFIER_LINKS_BYTES, Bytes.toBytes(outLinks));
+			if (outLinks != null) {
+				repoPut.add(Constants.COLUMNFAMILY_OUTGOING_BYTES,
+						Constants.QUALIFIER_LINKS_BYTES,
+						Bytes.toBytes(outLinks));
 			}
 			repoTable.put(repoPut);
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
-		Configuration conf = HBaseConfiguration.create();
-		int res = ToolRunner.run(conf, new WebCrawler(), args);
+		Configuration conf = null;
+		int iterNum = 0;
+		int res = 0;
+		String givenOutput = args[1];
+		long startTime = System.currentTimeMillis();
+		long totalTimeToRun = Long.parseLong(args[3])*60*1000;
+		WebCrawler wc = new WebCrawler();
+		while (wc.numberToCrawl > 0 && (System.currentTimeMillis() - startTime) < totalTimeToRun && res != 0) {
+			conf = HBaseConfiguration.create();
+			args[1] = givenOutput+"/"+iterNum;
+			res = ToolRunner.run(conf, wc, args);
+			args[0] = args[1];
+			iterNum ++;
+		}
 		System.exit(res);
 	}
 
@@ -126,9 +146,7 @@ public class WebCrawler extends Configured implements Tool {
 		Configuration conf = super.getConf();
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
-
-		Job job = new Job(conf, "Retrieving seeds from frontier table ");
-
+		Job job = new Job(conf, "Retrieving seeds from new seeds text");
 		job.setJarByClass(WebCrawler.class);
 		job.setMapperClass(CrawlerMapper.class);
 		job.setReducerClass(CrawlerReducer.class);
@@ -138,10 +156,9 @@ public class WebCrawler extends Configured implements Tool {
 		job.setOutputKeyClass(NullWritable.class);
 		job.setOutputValueClass(Text.class);
 
-		FileInputFormat
-				.addInputPath(job, new Path(args[0]));
+		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
-
+		numberToCrawl = job.getCounters().findCounter(newURLS.NEW).getValue();
 		return job.waitForCompletion(true) ? 0 : 1;
 	}
 }

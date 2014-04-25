@@ -14,6 +14,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import edu.utilities.Constants;
 import edu.utilities.URLHelper;
+import edu.wc.WebCrawler.newURLS;
 
 public class CrawlerReducer extends Reducer<Text, Text, NullWritable, Text> {
 
@@ -36,11 +37,13 @@ public class CrawlerReducer extends Reducer<Text, Text, NullWritable, Text> {
 		Get get = new Get(key.getBytes());
 		get.addFamily(Constants.COLUMNFAMILY_URLS_BYTES);
 		Result mResult = crawledTable.get(get);
+		boolean newUrls = false;
 
 		if (mResult.isEmpty()) {
 			for (Text newURL : value) {
 				if (uniqueURLs.add(newURL.toString())) {
 					context.write(out, newURL);
+					newUrls = true;
 				}
 			}
 		} else {
@@ -52,6 +55,7 @@ public class CrawlerReducer extends Reducer<Text, Text, NullWritable, Text> {
 								Constants.COLUMNFAMILY_URLS_BYTES,
 								Bytes.toBytes(urlHelper.sha1()))) {
 							context.write(out, newURL);
+							newUrls = true;
 						}
 					} catch (NoSuchAlgorithmException e) {
 						// TODO Auto-generated catch block
@@ -60,6 +64,8 @@ public class CrawlerReducer extends Reducer<Text, Text, NullWritable, Text> {
 				}
 			}
 		}
+		if(newUrls)
+		context.getCounter(newURLS.NEW).increment(1);
 
 	}
 }
