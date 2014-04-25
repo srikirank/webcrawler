@@ -60,8 +60,7 @@ public class WebCrawler extends Configured implements Tool {
 		@Override
 		protected void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
-
-			String crawlingURL = "http://" + value.toString().split(",")[1];
+			String crawlingURL = value.toString();
 			try {
 				Document doc = null;
 
@@ -127,15 +126,15 @@ public class WebCrawler extends Configured implements Tool {
 		Configuration conf = null;
 		int iterNum = 0;
 		int res = 0;
-		String givenOutput = args[1];
+		String givenOutput = args[3];
 		long startTime = System.currentTimeMillis();
-		long totalTimeToRun = Long.parseLong(args[3])*60*1000;
+		long totalTimeToRun = Long.parseLong(args[5])*60*1000;
 		WebCrawler wc = new WebCrawler();
-		while (wc.numberToCrawl > 0 && (System.currentTimeMillis() - startTime) < totalTimeToRun && res != 0) {
+		while (wc.numberToCrawl > 0 && (System.currentTimeMillis() - startTime) < totalTimeToRun) {
 			conf = HBaseConfiguration.create();
-			args[1] = givenOutput+"/"+iterNum;
+			args[3] = givenOutput+"/"+iterNum;
 			res = ToolRunner.run(conf, wc, args);
-			args[0] = args[1];
+			args[2] = args[3];
 			iterNum ++;
 		}
 		System.exit(res);
@@ -143,6 +142,7 @@ public class WebCrawler extends Configured implements Tool {
 
 	@Override
 	public int run(String[] args) throws Exception {
+		int res = 0;
 		Configuration conf = super.getConf();
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
@@ -159,6 +159,8 @@ public class WebCrawler extends Configured implements Tool {
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 		numberToCrawl = job.getCounters().findCounter(newURLS.NEW).getValue();
-		return job.waitForCompletion(true) ? 0 : 1;
+		job.setNumReduceTasks(4);
+		res = job.waitForCompletion(true) ? 0 : 1;
+		return res;
 	}
 }
