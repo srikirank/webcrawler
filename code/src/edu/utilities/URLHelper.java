@@ -92,7 +92,8 @@ public class URLHelper {
 	
 	public String generateKey() throws NoSuchAlgorithmException {
 		String key = getTopDomain();
-		key += "-" + subSha1();
+		//key += "-" + subSha1();
+		key += "-" + sha1();
 		return key;
 	}
 

@@ -54,19 +54,21 @@ public class PageRank extends Configured implements Tool {
 		@Override
 		public void map(ImmutableBytesWritable row, Result result,	Context context)
 				throws IOException, InterruptedException {
-			byte[] UrlsBytes = result.getValue(Constants.COLUMNFAMILY_OUTGOING_BYTES, Constants.COLUMNFAMILY_URLS_BYTES);
+			byte[] UrlsBytes = result.getValue(Constants.COLUMNFAMILY_OUTGOING_BYTES, Constants.QUALIFIER_LINKS_BYTES);
 			byte[] addressBytes = result.getValue(Constants.COLUMNFAMILY_URL_BYTES,Constants.QUALIFIER_ADDRESS_BYTES);
 			String urls = Bytes.toString(UrlsBytes);
 			String address = Bytes.toString(addressBytes);
 			URLHelper uh = new URLHelper(address);
 			String addressHash = null;
 			try {
-				addressHash = uh.generateKey();
+				addressHash = uh.sha1();
+				context.write(new Text(addressHash),new Text(urls));
 			} catch (NoSuchAlgorithmException e) {
 				e.printStackTrace();
 			}
-						
-			context.write(new Text(addressHash),new Text(urls));
+			catch (Exception e) {
+				System.out.println("Exception caused by: " + e.getMessage());
+			}
 		}
 	}
 
@@ -87,7 +89,7 @@ public class PageRank extends Configured implements Tool {
 
 	public static void main(String[] args) throws Exception {
 		Configuration conf = HBaseConfiguration.create();
-		int res = ToolRunner.run(conf, new WebCrawler(), args);
+		int res = ToolRunner.run(conf, new PageRank(), args);
 		System.exit(res);
 	}
 
