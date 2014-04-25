@@ -32,7 +32,8 @@ else
     exit 254
 fi
 
-export WC_CLASSPATH="/Users/sri/Development/Java/classpath"
+#export WC_CLASSPATH="/Users/sri/Development/Java/classpath"
+export WC_CLASSPATH="/u/skanchib/spring14/classpath"
 export LIBJARS="$WC_CLASSPATH"/jsoup-1.7.3.jar
 export HADOOP_CLASSPATH=`$HBASE_HOME/bin/hbase classpath`
 export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:`echo "$LIBJARS" | sed s/,/:/g`
