@@ -27,6 +27,8 @@ Here are the various sources that helped us in this project.
 ## General
 1. [Handling spaces in Unix path variables][gen-1] - Stackoverflow
 2. [Mastering Classpath in Java][gen-2]
+3. [Expect and Interact scripts][gen-3] - Stackoverflow
+4. [Mastering ssh keys][gen-4]
 
 [markdown-1]: http://daringfireball.net/projects/markdown/basics "Basics"
 [markdown-2]: http://daringfireball.net/projects/markdown/syntax "Syntax"
@@ -43,3 +45,5 @@ Here are the various sources that helped us in this project.
 [hadoop-4]: http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/util/Tool.html
 [gen-2]: http://kevinboone.net/classpath.html
 [arch-1]: http://wiki.apache.org/nutch/WebDB
+[gen-3]: http://stackoverflow.com/questions/4780893/use-expect-in-bash-script-to-provide-password-to-ssh-command
+[gen-4]: http://blog.vigilcode.com/2011/11/mastering-ssh-keys/

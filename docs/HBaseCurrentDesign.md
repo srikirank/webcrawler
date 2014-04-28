@@ -1,10 +1,10 @@
 # HBase backend design
 Currently we are using two tables to serve as datastore for the crawler functions.
 
-## Frontier
+## Crawled
 
-+ **Row-key**: hash <br/>
->`ca0ae2e3aefc56f4c071f475575915bc05074ba4`
++ **Row-key**: Reversed Domain <br/>
+>`com.url1`
 
 + **Col-Family**: urls<br/>
     + **Qualifier** : address<br/>
@@ -12,25 +12,29 @@ Currently we are using two tables to serve as datastore for the crawler function
 <table>
   <tr>
     <th>row</th>
-    <th>urls:address</th>
+    <th>urls:ca0ae2e3aefc56f</th>
+    <th>urls:eb6dce06aed2afc</th>
   </tr>
   <tr>
-    <td>91ecbb5330dfb106a6ee67a4c934f1305b50f40a</td>
-    <td>com.apple.www/iPad</td>
+    <td>com.url1</td>
+    <td>www.url1.com/xyz1</td>
+    <td>www.url1.com/xyz2</td>
   </tr>  
   <tr>
-    <td>ca0ae2e3aefc56f4c071f475575915bc05074ba4</td>
-    <td>com.apple.www/iPhone</td>
+    <th></th>
+    <th>urls:ca0ae2e3aefc56f4c</th>
+    <th>urls:eb6dce06aed2afc39</th>
   </tr>
   <tr>
-    <td>eb6dce06aed2afc391b51acdd255976c818b8d97</td>
-    <td>com.apple.www/support</td>
-  </tr>
+    <td>com.url1</td>
+    <td>www.url1.com/xyz1</td>
+    <td>www.url1.com/xyz2</td>
+  </tr>    
 </table>
 
 ## Repository
 + **Row-key**: reversed host-*hash* <br/>
->`com.apple.www-ca0ae2e3aefc56f4c071f475575915bc05074ba4`
+>`com.apple.www-ca0ae2e3aefc56f`
 
 + **Col-Family**: urls<br/>
     + **Col-Qualifier-1**: url<br/>
@@ -44,20 +48,18 @@ An Example of the structure of repository:
   <th>row</th>
   <th>urls:url</th>
   <th>urls:content</th>
+  <th>outgoing:links</th>
 </tr>
 <tr>
-  <td>com.apple.com-91ecbb5330dfb106a6ee67a4c934f1305b50f40a</td>
-  <td>/iPhone</td>
+  <td>com.apple.com-91ecbb5330dfb1</td>
+  <td>/xyz2</td>
   <td>html content</td>
+  <td>f4c071f4755759,91ecbb5330d</td>
 </tr>
 <tr>
   <td>com.apple.com-ca0ae2e3aefc56f4c071f475575915bc05074ba4</td>
-  <td>/iPad</td>
+  <td>/xyz1</td>
   <td>html content</td>
-</tr>
-<tr>
-  <td>com.apple.com-eb6dce06aed2afc391b51acdd255976c818b8d97</td>
-  <td>/support</td>
-  <td>html content</td>
+  <td>f4c071f4755759,91ecbb5330d</td>
 </tr>
 </table>
