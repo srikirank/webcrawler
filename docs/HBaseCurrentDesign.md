@@ -4,7 +4,7 @@ Currently we are using two tables to serve as datastore for the crawler function
 ## Crawled
 
 + **Row-key**: Reversed Domain <br/>
->`com.url1`
+>`com.apple`
 
 + **Col-Family**: urls<br/>
     + **Qualifier** : address<br/>
@@ -16,9 +16,9 @@ Currently we are using two tables to serve as datastore for the crawler function
     <th>urls:eb6dce06aed2afc</th>
   </tr>
   <tr>
-    <td>com.url1</td>
-    <td>www.url1.com/xyz1</td>
-    <td>www.url1.com/xyz2</td>
+    <td>com.apple</td>
+    <td>www.apple.com/about</td>
+    <td>www.apple.com/products</td>
   </tr>  
   <tr>
     <th></th>
@@ -26,9 +26,9 @@ Currently we are using two tables to serve as datastore for the crawler function
     <th>urls:eb6dce06aed2afc39</th>
   </tr>
   <tr>
-    <td>com.url1</td>
-    <td>www.url1.com/xyz1</td>
-    <td>www.url1.com/xyz2</td>
+    <td>org.wikipedia</td>
+    <td>en.wikipedia.org/wiki/Java</td>
+    <td>en.wikipedia.org/wiki/XML/</td>
   </tr>    
 </table>
 
