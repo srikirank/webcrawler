@@ -1,10 +1,10 @@
 # HBase backend design
 Currently we are using two tables to serve as datastore for the crawler functions.
 
-## Frontier
+## Crawled
 
-+ **Row-key**: hash <br/>
->`ca0ae2e3aefc56f4c071f475575915bc05074ba4`
++ **Row-key**: Reversed domain <br/>
+>`com.apple`
 
 + **Col-Family**: urls<br/>
     + **Qualifier** : address<br/>
