@@ -39,7 +39,12 @@ Currently we are using two tables to serve as datastore for the crawler function
 + **Col-Family**: urls<br/>
     + **Col-Qualifier-1**: url<br/>
     + **Col-Qualifier-2**: hash<br/>
-    + **Col-Qualifier-3**: content<br/>
+    
++ **Col-Family**: content<br/>
+    + **Col-Qualifier**: body<br/>
+
++ **Col-Family**: outgoing<br/>
+    + **Col-Qualifier**: links<br/>
 
 An Example of the structure of repository:
 
@@ -47,19 +52,22 @@ An Example of the structure of repository:
 <tr>
   <th>row</th>
   <th>urls:url</th>
-  <th>urls:content</th>
+  <th>urls:hash</th>
+  <th>content:body</th>
   <th>outgoing:links</th>
 </tr>
 <tr>
   <td>com.apple.com-91ecbb5330dfb1</td>
-  <td>/xyz2</td>
+  <td>/about</td>
+  <td>91ecbb5330dfb1</td>
   <td>html content</td>
-  <td>f4c071f4755759,91ecbb5330d</td>
+  <td>hgc071f4755759,91ecbb5330d</td>
 </tr>
 <tr>
-  <td>com.apple.com-ca0ae2e3aefc56f4c071f475575915bc05074ba4</td>
-  <td>/xyz1</td>
+  <td>com.apple.com-ca0ae2e3aefc56f</td>
+  <td>/products</td>
+  <td>ca0ae2e3aefc56f</td>
   <td>html content</td>
-  <td>f4c071f4755759,91ecbb5330d</td>
+  <td>f4c071f4685759,10ecbb5330d</td>
 </tr>
 </table>
