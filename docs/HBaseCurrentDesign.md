@@ -3,7 +3,7 @@ Currently we are using two tables to serve as datastore for the crawler function
 
 ## Crawled
 
-+ **Row-key**: Reversed domain <br/>
++ **Row-key**: Reversed Domain <br/>
 >`com.apple`
 
 + **Col-Family**: urls<br/>
@@ -12,30 +12,39 @@ Currently we are using two tables to serve as datastore for the crawler function
 <table>
   <tr>
     <th>row</th>
-    <th>urls:address</th>
+    <th>urls:ca0ae2e3aefc56f</th>
+    <th>urls:eb6dce06aed2afc</th>
   </tr>
   <tr>
-    <td>91ecbb5330dfb106a6ee67a4c934f1305b50f40a</td>
-    <td>com.apple.www/iPad</td>
+    <td>com.apple</td>
+    <td>www.apple.com/about</td>
+    <td>www.apple.com/products</td>
   </tr>  
   <tr>
-    <td>ca0ae2e3aefc56f4c071f475575915bc05074ba4</td>
-    <td>com.apple.www/iPhone</td>
+    <th></th>
+    <th>urls:ca0ae2e3aefc56f4c</th>
+    <th>urls:eb6dce06aed2afc39</th>
   </tr>
   <tr>
-    <td>eb6dce06aed2afc391b51acdd255976c818b8d97</td>
-    <td>com.apple.www/support</td>
-  </tr>
+    <td>org.wikipedia</td>
+    <td>en.wikipedia.org/wiki/Java</td>
+    <td>en.wikipedia.org/wiki/XML/</td>
+  </tr>    
 </table>
 
 ## Repository
 + **Row-key**: reversed host-*hash* <br/>
->`com.apple.www-ca0ae2e3aefc56f4c071f475575915bc05074ba4`
+>`com.apple.www-ca0ae2e3aefc56f`
 
 + **Col-Family**: urls<br/>
     + **Col-Qualifier-1**: url<br/>
     + **Col-Qualifier-2**: hash<br/>
-    + **Col-Qualifier-3**: content<br/>
+    
++ **Col-Family**: content<br/>
+    + **Col-Qualifier**: body<br/>
+
++ **Col-Family**: outgoing<br/>
+    + **Col-Qualifier**: links<br/>
 
 An Example of the structure of repository:
 
@@ -43,21 +52,22 @@ An Example of the structure of repository:
 <tr>
   <th>row</th>
   <th>urls:url</th>
-  <th>urls:content</th>
+  <th>urls:hash</th>
+  <th>content:body</th>
+  <th>outgoing:links</th>
 </tr>
 <tr>
-  <td>com.apple.com-91ecbb5330dfb106a6ee67a4c934f1305b50f40a</td>
-  <td>/iPhone</td>
+  <td>com.apple.com-91ecbb5330dfb1</td>
+  <td>/about</td>
+  <td>91ecbb5330dfb1</td>
   <td>html content</td>
+  <td>hgc071f4755759,91ecbb5330d</td>
 </tr>
 <tr>
-  <td>com.apple.com-ca0ae2e3aefc56f4c071f475575915bc05074ba4</td>
-  <td>/iPad</td>
+  <td>com.apple.com-ca0ae2e3aefc56f</td>
+  <td>/products</td>
+  <td>ca0ae2e3aefc56f</td>
   <td>html content</td>
-</tr>
-<tr>
-  <td>com.apple.com-eb6dce06aed2afc391b51acdd255976c818b8d97</td>
-  <td>/support</td>
-  <td>html content</td>
+  <td>f4c071f4685759,10ecbb5330d</td>
 </tr>
 </table>

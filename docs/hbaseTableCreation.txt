@@ -1,4 +1,2 @@
-create 'frontier', 'URL'
-create 'repository', 'URL'
-put 'frontier' ,'d735f810d538d80e2d0bea8d424a680e38e725f1' ,'URL:address' , 'http://stackoverflow.com/questions/8060170/printing-hexadecimal-characters-in-c'
-put 'frontier' ,'c65463bf0408b893a0cdf31d8cd5dd4d59b8e763' ,'URL:address' , 'http://meta.stackoverflow.com/questions/251375/meta-hasnt-changed-at-all?cb=1'
+create 'repository', 'URL','content','outgoing'
+create 'crawled', 'URLS'

@@ -1,26 +1,25 @@
 package edu.wc;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
+import edu.utilities.Constants;
+
+import java.security.NoSuchAlgorithmException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
 //import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
 //import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -31,136 +30,138 @@ import org.jsoup.select.Elements;
 
 import edu.utilities.URLHelper;
 
-public class WebCrawler extends Configured implements Tool{
-
-	static final String FROINTER_TABLE_NAME = "frontier";
-	static final String REPOSITORY_TABLE_NAME = "repository";
-	static final String URL_COLUMN_FAMILY = "URL";
-	static final String ADDRESS_COLUMN_NAME = "address";
-	static final String CONTENT_COLUMN_NAME = "content";
+public class WebCrawler extends Configured implements Tool {
 
 	static int rowKey_Id = 10;
+	long numberToCrawl = 1;
+
+	enum newURLS {
+		NEW;
+	}
 
 	public static class CrawlerMapper extends
-			TableMapper<ImmutableBytesWritable, Text> {
+			Mapper<LongWritable, Text, Text, Text> {
 
-	    private HTable frontTable = null;
-	    private HTable repoTable = null;
-	    private byte[] urlFamily = null;
-	    private byte[] addressQual = null;
-	    private byte[] contentQual = null;
-
-	    @Override
-	    protected void setup(Context context)
-	    throws IOException, InterruptedException {
-	      frontTable = new HTable(context.getConfiguration(), FROINTER_TABLE_NAME);
-//	      frontTable.setAutoFlush(false);
-	      
-	      repoTable = new HTable(context.getConfiguration(),REPOSITORY_TABLE_NAME);
-//	      repoTable.setAutoFlush(false);
-	      urlFamily = Bytes.toBytes(URL_COLUMN_FAMILY);
-	      addressQual = Bytes.toBytes(ADDRESS_COLUMN_NAME);
-	      contentQual = Bytes.toBytes(CONTENT_COLUMN_NAME);
-	    }
+		private HTable repoTable = null;
+		private HTable crawledTable = null;
 
 		@Override
-		protected void map(ImmutableBytesWritable rowKey, Result result,
-				Context context) throws IOException, InterruptedException {
-			byte[] crawlingURLBytes = result.getValue(urlFamily,addressQual);
-			String crawlingURL = Bytes.toString(crawlingURLBytes);
+		protected void setup(Context context) throws IOException,
+				InterruptedException {
+			repoTable = new HTable(context.getConfiguration(),
+					Constants.TABLE_REPOSITORY);
+			// repoTable.setAutoFlush(false);
+
+			crawledTable = new HTable(context.getConfiguration(),
+					Constants.TABLE_CRAWLED);
+			// crawledTable.setAutoFlush(false);
+		}
+
+		@Override
+		protected void map(LongWritable key, Text value, Context context)
+				throws IOException, InterruptedException {
+			String crawlingURL = value.toString();
 			try {
-				if(isCrawled(crawlingURL))
-					return;
-				
-				Document doc;
-			
-				doc = Jsoup.connect(crawlingURL).get();				
-				String body = doc.body().text();				
-				addNewURLtoRepository(crawlingURL, body);
-				
-				Elements links = doc.select("a");
-				
-				for (Element link : links) {
-					String toCrawlURL = link.absUrl("href");
-					processURL(toCrawlURL);
-				}
+				Document doc = null;
+
+				doc = Jsoup.connect(crawlingURL).get();
+				if (doc != null)
+					processURL(crawlingURL, doc, context);
 
 			} catch (Exception ex) {
-				ex.printStackTrace();
+				System.out.println("Exception while parsing file ::"
+						+ ex.getMessage());
+				// ex.printStackTrace();
 			}
 		}
 
 		@Override
-		protected void cleanup(Context context) throws IOException, InterruptedException {
+		protected void cleanup(Context context) throws IOException,
+				InterruptedException {
 			super.cleanup(context);
 
 			repoTable.close();
-			frontTable.close();
-		}
-		
-		private void processURL(String toCrawlURL) throws NoSuchAlgorithmException, IOException{
-			URLHelper uh = new URLHelper(toCrawlURL);
-			if(!isCrawled(toCrawlURL)){
-					Put frontPut = new Put(Bytes.toBytes(uh.sha1()));
-					frontPut.add(urlFamily, addressQual, Bytes.toBytes(toCrawlURL));
-
-					frontTable.put(frontPut);							
-			}						
 		}
 
-		private boolean isCrawled(String checkURL) throws IOException, NoSuchAlgorithmException{
-			URLHelper uh = new URLHelper(checkURL);
-
-			Get repoGet = new Get(Bytes.toBytes(uh.sha1()));
-			Result repoRow = repoTable.get(repoGet);
-			return !repoRow.isEmpty();		
-		}
-
-		private void addNewURLtoRepository(String addURL, String body) throws NoSuchAlgorithmException, IOException{
+		private void processURL(String addURL, Document doc, Context context)
+				throws NoSuchAlgorithmException, IOException,
+				InterruptedException {
 			URLHelper uh = new URLHelper(addURL);
-			String urlKey = uh.generateKey();
-					
-	        Put repoPut = new Put(Bytes.toBytes(urlKey));
-	        repoPut.add(urlFamily, addressQual, Bytes.toBytes(addURL));
-			repoPut.add(urlFamily, contentQual, Bytes.toBytes(body));
+			String repoKey = uh.generateKey();
+			Put repoPut = new Put(Bytes.toBytes(repoKey));
+			String crawledKey = uh.getTopDomain();
+			Put crawledPut = new Put(Bytes.toBytes(crawledKey));
+			String outLinks = null;
+			crawledPut.add(Constants.COLUMNFAMILY_URLS_BYTES,
+					Bytes.toBytes(uh.sha1()), Bytes.toBytes(addURL));
+			crawledTable.put(crawledPut);
+
+			String body = doc.body().text();
+			StringBuffer sb = new StringBuffer();
+			Elements links = doc.select("a");
+
+			for (Element link : links) {
+				String toCrawlURL = link.absUrl("href");
+				uh.setURL(toCrawlURL);
+				sb.append(uh.sha1()).append(",");
+				context.write(new Text(uh.getTopDomain()), new Text(toCrawlURL));
+			}
+			if (sb.length() > 0) {
+				outLinks = sb.substring(0, sb.length() - 1);
+			}
+			repoPut.add(Constants.COLUMNFAMILY_URL_BYTES,
+					Constants.QUALIFIER_ADDRESS_BYTES, Bytes.toBytes(addURL));
+			repoPut.add(Constants.COLUMNFAMILY_CONTENT_BYTES,
+					Constants.QUALIFIER_BODY_BYTES, Bytes.toBytes(body));
+			if (outLinks != null) {
+				repoPut.add(Constants.COLUMNFAMILY_OUTGOING_BYTES,
+						Constants.QUALIFIER_LINKS_BYTES,
+						Bytes.toBytes(outLinks));
+			}
 			repoTable.put(repoPut);
 		}
 	}
 
-	public static class CrawlerReducer extends
-			TableReducer<ImmutableBytesWritable, Text, ImmutableBytesWritable> {
-
-	    @Override
-		public void reduce(ImmutableBytesWritable rowKey, Iterable<Text> crawlingURLs,
-				Context context) throws IOException, InterruptedException {
-
-		}		
-	}
-
 	public static void main(String[] args) throws Exception {
-		Configuration conf = HBaseConfiguration.create();
-		int res = ToolRunner.run(conf, new WebCrawler(), args);
+		Configuration conf = null;
+		int iterNum = 0;
+		int res = 0;
+		String givenOutput = args[3];
+		long startTime = System.currentTimeMillis();
+		long totalTimeToRun = Long.parseLong(args[4])*60*1000;
+		WebCrawler wc = new WebCrawler();
+		while (wc.numberToCrawl > 0 && (System.currentTimeMillis() - startTime) < totalTimeToRun) {
+			conf = HBaseConfiguration.create();
+			args[3] = givenOutput+"/"+iterNum;
+			res = ToolRunner.run(conf, wc, args);
+			args[2] = args[3];
+			iterNum ++;
+		}
 		System.exit(res);
 	}
 
 	@Override
-	public int run(String[] arg0) throws Exception {
+	public int run(String[] args) throws Exception {
+		int res = 0;
 		Configuration conf = super.getConf();
 		conf.set("mapred.map.tasks.speculative.execution", "false");
 		conf.set("mapred.reduce.tasks.speculative.execution", "false");
-
-		Scan scan = new Scan();
-		scan.addColumn(Bytes.toBytes(URL_COLUMN_FAMILY),
-				Bytes.toBytes(ADDRESS_COLUMN_NAME));
-
-		Job job = new Job(conf, "Retrieving seeds from frontier table ");
-
+		Job job = new Job(conf, "Retrieving seeds from new seeds text");
 		job.setJarByClass(WebCrawler.class);
-		TableMapReduceUtil.initTableMapperJob(FROINTER_TABLE_NAME, scan,
-				CrawlerMapper.class, ImmutableBytesWritable.class, Writable.class, job);
-		TableMapReduceUtil.initTableReducerJob(FROINTER_TABLE_NAME, CrawlerReducer.class, job);
-		job.setNumReduceTasks(0);
-				
-		return job.waitForCompletion(true) ? 0 : 1;
+		job.setMapperClass(CrawlerMapper.class);
+		job.setReducerClass(CrawlerReducer.class);
+
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(Text.class);
+		job.setOutputKeyClass(NullWritable.class);
+		job.setOutputValueClass(Text.class);
+
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+		job.setNumReduceTasks(4);
+		res = job.waitForCompletion(true) ? 0 : 1;
+		numberToCrawl = job.getCounters().findCounter(newURLS.NEW).getValue();
+		return res;
 	}
 }

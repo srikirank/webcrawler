@@ -86,21 +86,33 @@ public class URLHelper {
 		return rHost;
 	}
 
+	public String getDomain(){
+		return getRHost().toString().split("\\.")[0];
+	}
+	
 	public String generateKey() throws NoSuchAlgorithmException {
-		StringBuilder key = getRHost();
-		key.append("-").append(sha1());
-		return key.toString();
+		String key = getTopDomain();
+		//key += "-" + subSha1();
+		key += "-" + sha1();
+		return key;
 	}
 
+	public String getTopDomain(){
+		StringBuilder rHost = new StringBuilder();
+		String[] parts = getHost().split("\\.");
+		
+		int length = parts.length;
+		for (int i = length-1; i > length-3; i--) {
+			rHost.append(parts[i]).append(".");
+		}
+		length = rHost.length();
+		return rHost.substring(0, length-1);
+	}
+	
 	public static void main(String[] args) throws NoSuchAlgorithmException {
 		URLHelper uh = new URLHelper();
-		uh.setURL("http://www.sha1-online.com/sha1-java/");
-		System.out.println(uh.sha1());
-		uh.setURL("http://www.sha1-online.com/");
-		System.out.println(uh.sha1());
-		System.out.println(uh.subSha1());
-		System.out.println(uh.getHost());
-		System.out.println(uh.getReversedHost());
-		System.out.println(uh.generateKey());
+		uh.setURL("http://" + "abc.cde.sha1-online.com");
+		System.out.println(uh.generateKey());		
+		System.out.println(uh.getTopDomain());		
 	}
 }
